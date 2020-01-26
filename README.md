@@ -11,7 +11,7 @@ These are the cli tools included:
  - Curl
 
 ## Usage
-Set the environment variable *NEWRELIC_API_TOKEN* to your NewRelic API token of choice, and then run one of the scripts.
+Set the environment variable *NEWRELIC_API_KEY* to your NewRelic API token of choice, and then run one of the scripts.
 ```bash
 $ ./newrelic_rest_cli
 Usage: ./newrelic_rest_cli COMMAND
@@ -27,7 +27,7 @@ Note: these scripts will return '1' as exit status if they receive a non-2xx HTT
 
 ## Examples
 ```bash
-$ NEWRELIC_API_TOKEN=<token here> ./newrelic_rest_cli get alerts policies | jq .
+$ NEWRELIC_API_KEY=<token here> ./newrelic_rest_cli get alerts policies | jq .
 {
   "policies": [
     {

@@ -19,10 +19,10 @@ _api_call () {
     # The return status is extracted (because curl doesn't return HTTP return status on exit)
     # and if it isn't a "2xx" return status, throw an error. The rest of the output is returned on stdout.
     if [ x"${DRYRUN:-}" = "x1" ] ; then
-        echo curl -sL -X "$TYPE" -H "X-Api-Key:$NEWRELIC_API_TOKEN" -w "\n%{http_code}" "$URL" "$@"
+        echo curl -sL -X "$TYPE" -H "X-Api-Key:$NEWRELIC_API_KEY" -w "\n%{http_code}" "$URL" "$@"
         exit 1
     fi
-    local OUTPUT="$(curl -sL -X "$TYPE" -H "X-Api-Key:$NEWRELIC_API_TOKEN" -w "\n%{http_code}" "$URL" "$@")"
+    local OUTPUT="$(curl -sL -X "$TYPE" -H "X-Api-Key:$NEWRELIC_API_KEY" -w "\n%{http_code}" "$URL" "$@")"
     local RETURNCODE="${OUTPUT##*$'\n'}"
     printf "${OUTPUT%"$RETURNCODE"}"
     if [ ! "${RETURNCODE:0:1}" = "2" ] ; then
@@ -136,8 +136,8 @@ if [ $# -lt 1 ] ; then
     _usage "COMMAND\nCommands:\n\tget\n\tdelete\n\tcreate\n\tupdate\n"
 fi
 
-if [ -z "${NEWRELIC_API_TOKEN:-}" ] ; then
-    echo "$0: Error: please set the NEWRELIC_API_TOKEN environment variable before continuing" 1>&2 ; exit 1
+if [ -z "${NEWRELIC_API_KEY:-}" ] ; then
+    echo "$0: Error: please set the NEWRELIC_API_KEY environment variable before continuing" 1>&2 ; exit 1
 fi
 
 cmd="$1"; shift
