@@ -9,6 +9,9 @@ set -e -o pipefail -u
 # Utility functions                     #
 #---------------------------------------#
 _api_call () {
+    # All extra arguments will be passed to curl.
+    # Note that this is potentially problematic; if an unexpected command-line argument
+    # goes to curl, curl may think it is a URL.
     [ $# -lt 2 ] && _usage "_api_call(TYPE, URL [, ..])"
     local TYPE="$1" URL="$2"
     shift 2
@@ -34,7 +37,7 @@ _usage () { printf "Usage: $0 $@\n" ; exit 1 ; }
 #---------------------------------------#
 _alerts () {
     local cmd="$1" ; shift
-    [ $# -lt 1 ] && _usage "$cmd alerts COMMAND\nCommands:\n\tlocation_failure_conditions\n\tsynthetic_conditions\n\tconditions\n\tpolicies\n"
+    [ $# -lt 1 ] && _usage "$cmd alerts COMMAND\nCommands:\n\tlocation_failure_conditions\n\tsynthetic_conditions\n\tconditions\n\tpolicies [..]\n"
     local func="$1"; shift 
     case "$func" in
         location_failure_conditions)
@@ -51,17 +54,17 @@ _alerts_location_failure_conditions () {
     local cmd="$1"; shift
     case "$cmd" in
         get)
-            [ $# -gt 0 ] || _usage "get alerts location_failure_conditions POLICY_ID" ;
+            [ $# -gt 0 ] || _usage "$cmd alerts location_failure_conditions POLICY_ID" ;
             _api_call GET "https://api.newrelic.com/v2/alerts_location_failure_conditions/policies/$1.json" ;;
         delete)
-            [ $# -gt 0 ] || _usage "delete alerts location_failure_conditions POLICY_ID" ;
+            [ $# -gt 0 ] || _usage "$cmd alerts location_failure_conditions POLICY_ID" ;
             _api_call DELETE "https://api.newrelic.com/v2/alerts_policies/$1.json" ;;
         create)
-            [ $# -gt 1 ] || _usage "create alerts location_failure_conditions POLICY_ID CONDITION_JSON" ;
+            [ $# -gt 1 ] || _usage "$cmd alerts location_failure_conditions POLICY_ID CONDITION_JSON" ;
             _api_call POST "https://api.newrelic.com/v2/alerts_location_failure_conditions/policies/$1.json" \
                 -H 'Content-Type: application/json' -d "$2" ;;
         update)
-            [ $# -gt 1 ] || _usage "update alerts location_failure_conditions POLICY_ID CONDITION_JSON" ;
+            [ $# -gt 1 ] || _usage "$cmd alerts location_failure_conditions POLICY_ID CONDITION_JSON" ;
             _api_call PUT "https://api.newrelic.com/v2/alerts_location_failure_conditions/policies/$1.json" \
                 -H 'Content-Type: application/json' -d "$2" ;;
     esac
@@ -70,7 +73,7 @@ _alerts_synthetic_conditions () {
     local cmd="$1"; shift
     case "$cmd" in
         get)
-            [ $# -gt 0 ] || _usage "get alerts synthetic_conditions POLICY_ID" ;
+            [ $# -gt 0 ] || _usage "$cmd alerts synthetic_conditions POLICY_ID" ;
             _api_call GET 'https://api.newrelic.com/v2/alerts_synthetics_conditions.json' -d "policy_id=$1" ;;
         *)
             _err "alerts synthetic_conditions: '$cmd' not implemented" ;;
@@ -80,7 +83,7 @@ _alerts_conditions () {
     local cmd="$1"; shift
     case "$cmd" in
         get)
-            [ $# -gt 0 ] || _usage "get alerts conditions POLICY_ID" ;
+            [ $# -gt 0 ] || _usage "$cmd alerts conditions POLICY_ID" ;
             _api_call GET 'https://api.newrelic.com/v2/alerts_conditions.json' -d "policy_id=$1" ;;
         *)
             _err "alerts conditions: '$cmd' not implemented" ;;
@@ -93,9 +96,8 @@ _alerts_policies () {
             declare -a args=()
             if [ $# -gt 0 ] ; then
                 if [ "$1" = "--help" ] ; then
-                    _usage "get alerts policies [KEY=VALUE ..]\n\nThe optional KEY=VALUE becomes form data passed to the API as 'filter[KEY]=VALUE'"
+                    _usage "$cmd alerts policies [KEY=VALUE ..]\n\nThe optional KEY=VALUE becomes form data passed to the API as 'filter[KEY]=VALUE'"
                 fi
-                declare -a args=()
                 for i in "$@" ; do
                     IFS='=' read -ra kv <<< "$i"
                     args+=("-d" "filter[${kv[0]}]=${kv[1]}")
@@ -105,7 +107,7 @@ _alerts_policies () {
             fi
             _api_call GET 'https://api.newrelic.com/v2/alerts_policies.json' "${args[@]}" ;;
         delete)
-            [ $# -lt 1 ] && _usage "delete alerts policies POLICY_ID"
+            [ $# -lt 1 ] && _usage "$cmd alerts policies POLICY_ID"
             _api_call DELETE "https://api.newrelic.com/v2/alerts_policies/$1.json" ;;
         *)
             _err "alerts policies: '$cmd' not implemented" ;;

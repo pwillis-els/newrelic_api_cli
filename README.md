@@ -1,21 +1,33 @@
 # NewRelic API CLI
 
-This is a Bash CLI tool for the NewRelic API.
+In this repo are some Bash CLI tools to manipulate different NewRelic APIs.
+
+These are the cli tools included:
+ - `newrelic_rest_cli` - The REST API (aren't they all REST APIs?)
+ - `newrelic_synthetics_cli` - The Synthetics API
 
 ## Requirements
  - Bash (probably version 4, only tested on Linux)
  - Curl
 
 ## Usage
-Set the environment variable *NEWRELIC_API_TOKEN* to your NewRelic API token of choice, and then run:
+Set the environment variable *NEWRELIC_API_TOKEN* to your NewRelic API token of choice, and then run one of the scripts.
 ```bash
-$ ./newrelic_api_cli
+$ ./newrelic_rest_cli
+Usage: ./newrelic_rest_cli COMMAND
+Commands:
+        get
+        delete
+        create
+        update
 ```
 Until all API functionality is implemented, there'll be a bunch of commands which will error out with "not implemented", so try out the commands you want to use first.
 
+Note: these scripts will return '1' as exit status if they receive a non-2xx HTTP response. To determine the actual HTTP response code, check *STDERR*.
+
 ## Examples
 ```bash
-$ NEWRELIC_API_TOKEN=<token here> ./newrelic_api_cli get alerts policies | jq .
+$ NEWRELIC_API_TOKEN=<token here> ./newrelic_rest_cli get alerts policies | jq .
 {
   "policies": [
     {
@@ -36,10 +48,10 @@ Please feel free to send me patches to extend the supported API functions and I'
 
 ## TODO
 
-Checked boxes are completed items.
+Note: This is probably an incomplete list of the features left to implement. Checked boxes are completed items.
 
 ### General features
- - [ ] Pagination
+ - [ ] Pagination (this may need to be implemented per API call, so you can add them to individual items below as they're completed)
 
 ### REST API features
  - [ ] Applications
@@ -76,3 +88,16 @@ Checked boxes are completed items.
  - [ ] Plugins
  - [ ] Components
  - [ ] Labels
+
+### Synthetics API features
+ - [x] All Monitors
+   - [x] GET | List
+ - [x] Monitors
+   - [x] GET | List
+   - [x] POST | Create
+   - [x] PUT | Update
+   - [x] PATCH | Patch
+   - [x] DELETE | Delete
+ - [x] Monitor Locations
+   - [x] GET | List
+ 

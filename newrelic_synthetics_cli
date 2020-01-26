@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+set -e -o pipefail -u
+[ x"${DEBUG:-}" = "x1" ] && set -x
+
+# Synthetics monitors api docs: https://docs.newrelic.com/docs/apis/synthetics-rest-api/monitor-examples/manage-synthetics-monitors-rest-api
+
+#---------------------------------------#
+# Utility functions                     #
+#---------------------------------------#
+_api_call () {
+    # All extra arguments will be passed to curl.
+    # Note that this is potentially problematic; if an unexpected command-line argument
+    # goes to curl, curl may think it is a URL.
+    [ $# -lt 2 ] && _usage "_api_call(TYPE, URL [, ..])"
+    local TYPE="$1" URL="$2"
+    shift 2
+
+    # The return status is extracted (because curl doesn't return HTTP return status on exit)
+    # and if it isn't a "2xx" return status, throw an error. The rest of the output is returned on stdout.
+    if [ x"${DRYRUN:-}" = "x1" ] ; then
+        echo curl -sL -X "$TYPE" -H "X-Api-Key:$NEWRELIC_API_TOKEN" -w "\n%{http_code}" "$URL" "$@"
+        exit 1
+    fi
+    local OUTPUT="$(curl -sL -X "$TYPE" -H "X-Api-Key:$NEWRELIC_API_TOKEN" -w "\n%{http_code}" "$URL" "$@")"
+    local RETURNCODE="${OUTPUT##*$'\n'}"
+    printf "${OUTPUT%"$RETURNCODE"}"
+    if [ ! "${RETURNCODE:0:1}" = "2" ] ; then
+        echo "$0: Error: HTTP return code was '$RETURNCODE'" 1>&2 ; exit 1
+    fi
+}
+_err () { echo "$0: Error: $@" ; exit 1 ; }
+_usage () { printf "Usage: $0 $@\n" ; exit 1 ; }
+
+#---------------------------------------#
+# Synthetics                            #
+#---------------------------------------#
+_monitors () {
+    local cmd="$1"; shift
+    case "$cmd" in
+        get)
+            if [ $# -gt 0 ] ; then
+                if [ "$1" = "--help" ] ; then
+                    _usage "$cmd synthetics monitors [ID ..]\n\nThe optional ID is a specific monitor to get"
+                fi
+                for i in "$@" ; do
+                    _api_call GET "https://synthetics.newrelic.com/synthetics/api/v3/monitors/$i"
+                done
+            else
+                _api_call GET 'https://synthetics.newrelic.com/synthetics/api/v3/monitors'
+            fi ;;
+        create)
+            [ $# -lt 1 ] && _usage "$cmd synthetics monitors POLICY_JSON"
+            _api_call POST 'https://synthetics.newrelic.com/synthetics/api/v3/monitors' \
+                -H 'Content-Type: application/json' -d "$1" ;;
+        update)
+            [ $# -lt 2 ] && _usage "$cmd synthetics monitors POLICY_ID POLICY_JSON"
+            _api_call PUT "https://synthetics.newrelic.com/synthetics/api/v3/monitors/$1" \
+                -H 'Content-Type: application/json' -d "$2" ;;
+        patch)
+            [ $# -lt 2 ] && _usage "$cmd synthetics monitors POLICY_ID POLICY_JSON"
+            _api_call PATCH "https://synthetics.newrelic.com/synthetics/api/v3/monitors/$1" \
+                -H 'Content-Type: application/json' -d "$2" ;;
+        delete)
+            [ $# -lt 1 ] && _usage "$cmd synthetics monitors POLICY_ID"
+            _api_call DELETE "https://synthetics.newrelic.com/synthetics/api/v3/monitors/$1" ;;
+        *)
+            _err "synthetics monitors: '$cmd' not implemented" ;;
+    esac
+}
+_locations () {
+    local cmd="$1"; shift
+    case "$cmd" in
+        get)
+            _api_call GET 'https://synthetics.newrelic.com/synthetics/api/v1/locations' ;;
+    esac
+}
+
+#---------------------------------------#
+# Misc functions
+#---------------------------------------#
+_basecmd () {
+    local cmd="$1"; shift
+    [ $# -lt 1 ] && _usage "$cmd COMMAND\nCommands:\n\tmonitors [..]\n\tlocations\n"
+    local func="$1"; shift
+    case "$func" in
+        monitors)
+            _monitors $cmd "$@" ;;
+        locations)
+            _locations $cmd "$@" ;;
+    esac
+}
+
+#---------------------------------------#
+# Main program                          #
+#---------------------------------------#
+
+if [ $# -lt 1 ] ; then
+    _usage "COMMAND\nCommands:\n\tget\n\tdelete\n\tcreate\n\tupdate\n\tpatch\n"
+fi
+
+if [ -z "${NEWRELIC_API_TOKEN:-}" ] ; then
+    echo "$0: Error: please set the NEWRELIC_API_TOKEN environment variable before continuing" 1>&2 ; exit 1
+fi
+
+cmd="$1"; shift
+if [ "$cmd" = "get" -o "$cmd" = "delete" -o "$cmd" = "create" -o "$cmd" = "update" -o "$cmd" = "patch" ] ; then
+    _basecmd "$cmd" "$@"
+fi
