@@ -57,15 +57,15 @@ _alerts_location_failure_conditions () {
             [ $# -gt 0 ] || _usage "$cmd alerts location_failure_conditions POLICY_ID" ;
             _api_call GET "https://api.newrelic.com/v2/alerts_location_failure_conditions/policies/$1.json" ;;
         delete)
-            [ $# -gt 0 ] || _usage "$cmd alerts location_failure_conditions POLICY_ID" ;
-            _api_call DELETE "https://api.newrelic.com/v2/alerts_policies/$1.json" ;;
+            [ $# -gt 0 ] || _usage "$cmd alerts location_failure_conditions CONDITION_ID" ;
+            _api_call DELETE "https://api.newrelic.com/v2/alerts_location_failure_conditions/$1.json" ;;
         create)
             [ $# -gt 1 ] || _usage "$cmd alerts location_failure_conditions POLICY_ID CONDITION_JSON" ;
             _api_call POST "https://api.newrelic.com/v2/alerts_location_failure_conditions/policies/$1.json" \
                 -H 'Content-Type: application/json' -d "$2" ;;
         update)
-            [ $# -gt 1 ] || _usage "$cmd alerts location_failure_conditions POLICY_ID CONDITION_JSON" ;
-            _api_call PUT "https://api.newrelic.com/v2/alerts_location_failure_conditions/policies/$1.json" \
+            [ $# -gt 1 ] || _usage "$cmd alerts location_failure_conditions CONDITION_ID CONDITION_JSON" ;
+            _api_call PUT "https://api.newrelic.com/v2/alerts_location_failure_conditions/$1.json" \
                 -H 'Content-Type: application/json' -d "$2" ;;
     esac
 }
